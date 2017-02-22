@@ -1,107 +1,95 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
-
+#include <math.h>
+#include <stdio.h>
+#include <iostream>
+#include <string>
 #include <stdio.h>
 
+using namespace std;
 
 #define SIZE	1024
+#define MAX_PRIME	1024
 #define passwordSize 4
 
 
-char testPassword[] = "";
 
-__global__ void VectorAdd(int *a, int *b, int *c, int n)
+
+
+__global__ void PasswordCrack(int *a, int n)
 {
-	int i = threadIdx.x;
 
-	if (i < n)
-		c[i] = a[i] + b[i];
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
+//	int j = blockDim.x * blockIdx.x + threadIdx.y;
+
+	if (i > 1)
+	{
+		if (i < n ) // just checking these numbers 
+		{
+
+			if (i > 2)
+			{
+				a[(i) * 2] = 1;
+
+			}
+		}
+	}
+
+
 }
-
 
 
 int main()
 {
-	int *a, *b, *c, *d;
-	int *d_a, *d_b, *d_c, *d_d;
 
-	char password[] = "West";
+	int *a;
+	int *d_a;
+	int threadsPerBlock = MAX_PRIME;
+	int blocksPerGrid = (MAX_PRIME + threadsPerBlock - 1) / threadsPerBlock;
 
-	double secondsPassed;
-
-	double durationCPU;
-	durationCPU = 0;
-
-	double durationGPU;
-	durationGPU = 0;
 
 	clock_t startTime = clock(); //Start timer
 	clock_t endTime = clock(); //Start timer
 	a = (int *)malloc(SIZE * sizeof(int));
-	b = (int *)malloc(SIZE * sizeof(int));
-	c = (int *)malloc(SIZE * sizeof(int));
-	d = (int *)malloc(SIZE * sizeof(int));
-
 	cudaMalloc(&d_a, SIZE * sizeof(int));
-	cudaMalloc(&d_b, SIZE * sizeof(int));
-	cudaMalloc(&d_c, SIZE * sizeof(int));
-	cudaMalloc(&d_d, SIZE * sizeof(int));
-	//Numbers and all that input them and all that fun stuff 
-	for (int i = 0; i <= 9; ++i)
+
+
+	for (int j = 1; j <= MAX_PRIME +1; j++)
 	{
-		a[i] = i + 48;
-		b[i] = i + 48;
-		c[i] = i + 48;
-		d[i] = i + 48;
+		a[j] = 0;
 	}
 
-	//upper case and all that  
-	for (int i = 10; i <= 35; ++i)
-	{
-		a[i] = i + 55;
-		b[i] = i + 55;
-		c[i] = i + 55;
-		d[i] = i + 55;
-	}
-
-	//Lower case  
-	for (int i = 36; i <= 62; ++i)
-	{
-		a[i] = i + 61;
-		b[i] = i + 61;
-		c[i] = i + 61;
-		d[i] = i + 61;
-	}
-
-startTime = clock(); //  Resetting the clock 
 
 	cudaMemcpy(d_a, a, SIZE * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, b, SIZE * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_c, c, SIZE * sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(d_d, d, SIZE * sizeof(int), cudaMemcpyHostToDevice);
-	VectorAdd << < 1, SIZE >> >(d_a, d_b, d_c, SIZE);
 
-	//cudaMemcpy(c, d_c, SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+
+	startTime = clock(); //  Resetting the clock 
+	dim3 dimBlock(MAX_PRIME, 1, 1);
+	dim3 dimGrid(1);
+	PasswordCrack <<<dimGrid, dimBlock >>> (d_a, MAX_PRIME);
+
+
 
 	endTime = clock();			// Getting the end time 
 	printf("StartTime \t: %d Milliseconds \n", startTime);
 	printf("endTime \t: %d Milliseconds \n", endTime);
 	printf("Time taken \t: %d Milliseconds \n", (endTime - startTime));
-
-
-	for (int i = 0; i < 62; ++i)
+	cudaMemcpy(a, d_a, SIZE * sizeof(int), cudaMemcpyDeviceToHost);
+	int Counter = 0;
+	for (int i = 0; i < MAX_PRIME; i++)
 	{
-		printf("c[%d] = %d\n", i, c[i]);
+		printf("%d = %d\n",i + 1, a[i]);
+		if (a[i] == 0)
+		{
+			Counter++;
+		}
 	}
-
-	free(a);
-	free(b);
-	free(c);
+	printf("number of primes = %d", Counter);
+	//free(a);
 
 	cudaFree(d_a);
-	cudaFree(d_b);
-	cudaFree(d_c);
+
 	printf("Press enter to end everything!");
 	getchar();
 	return 0;

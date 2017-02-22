@@ -54,7 +54,15 @@ int main()
 		c[i] = i + 61;
 		d[i] = i + 61;
 	}
-	crackPassword(a, b, c, d);
+	startTime = clock(); //  Resetting the clock 
+
+	crackPassword(a, b, c, d); // Actually cracking the password and all that fun stuff 
+
+	endTime = clock();			// Getting the end time 
+	printf("\nStartTime \t: %d Milliseconds \n", startTime);
+	printf("endTime \t: %d Milliseconds \n", endTime);
+	printf("Time taken \t: %d Milliseconds \n", (endTime - startTime));
+
 	free(a);
 	free(b);
 	free(c);
